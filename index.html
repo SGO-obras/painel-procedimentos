@@ -43,6 +43,13 @@ td{padding:10px 8px;border-bottom:1px solid #1d2d50}
 .msg-erro{color:var(--erro);font-size:.9rem;min-height:20px;margin-top:12px}
 .voltar{margin-bottom:16px}
 .diario-resumo p{padding:8px 0;border-bottom:1px solid #1d2d50;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.avaliacao-box{margin-top:22px;padding-top:18px;border-top:1px solid #1d2d50}
+.avaliacao-opcoes{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.nota-btn{width:38px;height:38px;border:1px solid #52627f;border-radius:7px;background:#0a192f;color:var(--txt);font-weight:700;cursor:pointer}
+.nota-btn:hover{border-color:var(--laranja);color:var(--laranja)}
+.nota-btn.selecionada{background:var(--laranja);border-color:var(--laranja);color:#fff}
+.nota-status{color:var(--dim);font-size:.85rem;margin-top:9px}
+.coord-nota{font-weight:700;color:var(--ok)}
 </style>
 </head>
 <body>
@@ -88,6 +95,8 @@ td{padding:10px 8px;border-bottom:1px solid #1d2d50}
         <div class="card" data-disc="Instalações Elétricas"><span class="ico">⚡</span><h3>Instalações Elétricas</h3></div>
         <div class="card" data-disc="Concreto Armado"><span class="ico">🧱</span><h3>Concreto Armado</h3></div>
         <div class="card" data-disc="Acessibilidade"><span class="ico">♿</span><h3>Acessibilidade</h3></div>
+        <div class="card" data-disc="Fundações"><span class="ico">🏗️</span><h3>Fundações</h3></div>
+        <div class="card" data-disc="Drenagem"><span class="ico">🌧️</span><h3>Drenagem</h3></div>
       </div>
       <div class="painel-box">
         <h3>📋 Diário de Procedimentos</h3>
@@ -141,8 +150,11 @@ const supabaseClient = window.supabase.createClient(
 );
 
 
+const PROCEDIMENTO_PROJETO = "Verificar se a última revisão do projeto aprovado está disponível na obra e se a execução está de acordo com suas especificações.";
+
 const DISCIPLINAS = {
   "Estruturas Metálicas": [
+    PROCEDIMENTO_PROJETO,
     "Verificar se a EPS (Especificação do Procedimento de Soldagem) e a RQPS (Registro de Qualificação do Procedimento de Soldagem) estão devidamente aprovadas.",
     "Verificar a RQS (Registro de Qualificação do Soldador) dos soldadores e a certificação dos inspetores, conferindo se estão dentro da validade.",
     "Conferir os certificados de calibração dos instrumentos de medição (paquímetro, trena a laser e outros).",
@@ -151,22 +163,24 @@ const DISCIPLINAS = {
     "Confirmar a entrega do Data Book completo ao final do serviço."
   ],
   "Instalações Hidráulicas": [
+    PROCEDIMENTO_PROJETO,
     "Verificar se os materiais e componentes instalados atendem ao projeto e às especificações técnicas, incluindo sua conservação e adequação ao uso.",
     "Verificar se as tubulações, conexões, dispositivos e demais componentes estão sendo executados conforme o projeto aprovado, sem interferências indevidas com outros sistemas ou elementos estruturais.",
     "Conferir a instalação das redes de água, esgoto e águas pluviais, observando, conforme aplicabilidade, a separação entre redes potáveis e não potáveis e a destinação adequada dos efluentes.",
-    "Verificar a realização dos ensaios e testes previstos no projeto, como estanqueidade das tubulações e funcionamento de bombas e dispositivos.",
-    "Verificar a correção das não conformidades e, ao final, a entrega dos registros de ensaios, documentos exigidos e projetos atualizados conforme executado (As Built), quando aplicáveis."
+    "Verificar a realização dos ensaios e testes previstos no projeto, como estanqueidade, ensaios na tubulação de água/ar e fumaça, e funcionamento de bombas e dispositivos.",
+    "Confirmar a entrega dos registros de inspeções e ensaios realizados e da documentação As Built, contendo a atualização do projeto hidráulico com eventuais mudanças feitas durante a execução."
   ],
   "Instalações Elétricas": [
+    PROCEDIMENTO_PROJETO,
     "Verificar se os cabos, eletrodutos, caixas e demais materiais instalados correspondem aos especificados no projeto.",
     "Conferir o posicionamento, a fixação e as condições de instalação dos eletrodutos, eletrocalhas e caixas elétricas.",
     "Verificar se os quadros estão instalados conforme o projeto, com circuitos identificados e dispositivos de proteção previstos.",
     "Conferir se os pontos elétricos estão posicionados conforme o projeto e se os componentes estão corretamente instalados.",
     "Verificar a execução do sistema de aterramento e confirmar a realização da inspeção visual e dos ensaios elétricos previstos antes da energização. Também verificar a instalação dos dispositivos DR (Dispositivo Diferencial Residual) e DPS (Dispositivo de Proteção contra Surtos), se exigidos em projeto.",
-    "Confirmar a entrega dos registros de inspeções e ensaios realizados e da documentação As Built, contendo a atualização do projeto elétrico com eventuais mudanças feitas durante a execução."
+    "Confirmar a entrega dos registros de inspeções e ensaios realizados conforme item 1.12 do anexo técnico e da documentação As Built, contendo a atualização do projeto elétrico com eventuais mudanças feitas durante a execução."
   ],
   "Concreto Armado": [
-    "Verificar se o projeto estrutural aprovado está disponível na obra e se a execução está de acordo com suas especificações.",
+    PROCEDIMENTO_PROJETO,
     "Conferir eixos, níveis, dimensões, alinhamento, prumo e estabilidade das fôrmas e dos escoramentos.",
     "Verificar diâmetros, posicionamento, espaçamento, emendas, ancoragens e cobrimento das armaduras, incluindo o uso adequado de espaçadores, conforme projeto.",
     "Conferir o concreto recebido, os ensaios de consistência (slump test), a coleta de corpos de prova quando prevista e os procedimentos de lançamento e adensamento.",
@@ -175,10 +189,27 @@ const DISCIPLINAS = {
     "Verificar os resultados dos ensaios de resistência do concreto, as correções das não conformidades e a documentação técnica exigida para o recebimento da obra, incluindo os projetos As Built, quando aplicáveis."
   ],
   "Acessibilidade": [
+    PROCEDIMENTO_PROJETO,
     "Verificar se os caminhos acessíveis estão sendo executados conforme o projeto, respeitando largura, níveis e inclinações especificados.",
     "Verificar se as rampas de acessibilidade e os rebaixamentos de calçada estão sendo executados conforme projeto.",
     "Conferir a instalação e o posicionamento dos pisos táteis e demais elementos de sinalização acessível previstos em projeto.",
     "Conferir se os serviços de acessibilidade foram concluídos conforme projeto, se não há barreiras à circulação e se a documentação prevista para o recebimento foi apresentada."
+  ],
+  "Fundações": [
+    PROCEDIMENTO_PROJETO,
+    "Verificar se os materiais e elementos utilizados na execução das fundações atendem ao projeto e às especificações técnicas, observando sua qualidade, conservação e adequação ao uso.",
+    "Conferir a locação, as dimensões e as cotas das fundações, bem como as condições do terreno e das escavações, garantindo sua compatibilidade com o projeto geotécnico e estrutural.",
+    "Verificar se a execução das fundações rasas ou profundas está sendo realizada como previsto, observando, conforme aplicabilidade, as condições de concretagem, posicionamento das armaduras e execução dos elementos.",
+    "Verificar a realização dos ensaios e controles, como controle de concretagem, provas de carga e ensaios de integridade, quando exigidos.",
+    "Verificar a correção das não conformidades e, ao final, a entrega dos registros de execução, resultados dos ensaios, documentos exigidos e projetos atualizados conforme executado (As Built), quando aplicáveis."
+  ],
+  "Drenagem": [
+    PROCEDIMENTO_PROJETO,
+    "Verificar se os materiais e componentes utilizados na drenagem atendem ao projeto e às especificações técnicas, incluindo tubulações, galerias, aduelas, grelhas e dispositivos de captação, observando sua conservação e adequação ao uso.",
+    "Conferir a locação, o alinhamento, as cotas e as declividades das redes e dos dispositivos de drenagem.",
+    "Verificar se a execução dos dispositivos de drenagem, como sarjetas, bocas de lobo, caixas coletoras, poços de visita, tubulações, galerias e dissipadores, está sendo realizada conforme o projeto e as especificações técnicas.",
+    "Verificar se as conexões entre os dispositivos estão adequadas e se o sistema permite o escoamento contínuo das águas pluviais, sem obstruções, vazamentos ou pontos de acúmulo indevido.",
+    "Verificar a correção das não conformidades e, ao final, a entrega dos registros de execução, resultados das inspeções e ensaios previstos, documentos exigidos e projetos atualizados conforme executado (As Built), quando aplicáveis."
   ]
 };
 
@@ -326,7 +357,9 @@ function montarCabecalhoCoord() {
     "Instalações Hidráulicas": "Hidráulica",
     "Instalações Elétricas": "Elétrica",
     "Concreto Armado": "Concreto",
-    "Acessibilidade": "Acessibilidade"
+    "Acessibilidade": "Acessibilidade",
+    "Fundações": "Fundações",
+    "Drenagem": "Drenagem"
   };
   cabecalho.innerHTML = "<th>Usuário</th><th>Obra</th>" +
     Object.keys(DISCIPLINAS).map(function(d) {
@@ -498,6 +531,32 @@ async function atualizarProcedimento(disciplina, procedimento, concluido){
     console.error(error);
     throw new Error("Não foi possível salvar a alteração.");
   }
+}
+
+// ---------- Avaliação de desempenho por disciplina ----------
+async function buscarAvaliacao(disciplina){
+  const { data, error } = await supabaseClient
+    .from("avaliacoes")
+    .select("nota")
+    .eq("obra_id", obraAtual.id)
+    .eq("user_id", usuario.id)
+    .eq("disciplina", disciplina)
+    .maybeSingle();
+  if(error) throw new Error("Não foi possível carregar a avaliação. Verifique a tabela avaliacoes no Supabase.");
+  return data ? Number(data.nota) : null;
+}
+
+async function salvarAvaliacao(disciplina, nota){
+  const { error } = await supabaseClient
+    .from("avaliacoes")
+    .upsert({
+      obra_id: obraAtual.id,
+      user_id: usuario.id,
+      disciplina: disciplina,
+      nota: nota,
+      atualizado_em: new Date().toISOString()
+    }, { onConflict: "obra_id,user_id,disciplina" });
+  if(error) throw new Error("Não foi possível salvar a avaliação. Verifique a configuração da tabela avaliacoes no Supabase.");
 }
 
 async function carregarSessao(){
@@ -833,6 +892,52 @@ async function renderChecklist(){
     box.appendChild(linha);
   });
 
+  var avaliacao = document.createElement("div");
+  avaliacao.className = "avaliacao-box";
+  avaliacao.innerHTML = '<h3 style="color:var(--laranja);margin-bottom:6px">Avaliação de desempenho</h3>' +
+    '<p style="color:var(--dim)">Avalie o desempenho do prestador de serviço/fornecedor nesta disciplina, de 0 a 10.</p>' +
+    '<div class="avaliacao-opcoes" id="avaliacao-opcoes" role="group" aria-label="Nota de desempenho de 0 a 10"></div>' +
+    '<p class="nota-status" id="avaliacao-status">Carregando avaliação...</p>';
+  box.appendChild(avaliacao);
+
+  try{
+    var notaAtual = await buscarAvaliacao(discAtual);
+    var opcoes = avaliacao.querySelector("#avaliacao-opcoes");
+    var status = avaliacao.querySelector("#avaliacao-status");
+    for(var nota=0; nota<=10; nota++){
+      (function(valor){
+        var btnNota = document.createElement("button");
+        btnNota.type = "button";
+        btnNota.className = "nota-btn" + (notaAtual === valor ? " selecionada" : "");
+        btnNota.textContent = String(valor);
+        btnNota.setAttribute("aria-pressed", notaAtual === valor ? "true" : "false");
+        btnNota.addEventListener("click", async function(){
+          opcoes.querySelectorAll("button").forEach(function(b){
+            b.disabled = true; b.classList.remove("selecionada"); b.setAttribute("aria-pressed","false");
+          });
+          status.textContent = "Salvando avaliação...";
+          try{
+            await salvarAvaliacao(discAtual, valor);
+            notaAtual = valor;
+            btnNota.classList.add("selecionada");
+            btnNota.setAttribute("aria-pressed","true");
+            status.textContent = "Nota " + valor + " salva.";
+          }catch(e){
+            status.textContent = "Não foi possível salvar a nota.";
+            alert(e.message || "Erro ao salvar avaliação.");
+          }finally{
+            opcoes.querySelectorAll("button").forEach(function(b){ b.disabled = false; });
+          }
+        });
+        opcoes.appendChild(btnNota);
+      })(nota);
+    }
+    status.textContent = notaAtual === null ? "Nenhuma nota selecionada." : "Nota atual: " + notaAtual + "/10.";
+  }catch(e){
+    avaliacao.querySelector("#avaliacao-status").textContent = "Não foi possível carregar a avaliação. Verifique a configuração no Supabase.";
+    console.error(e);
+  }
+
   await atualizarProgresso();
 }
 
@@ -990,7 +1095,10 @@ async function montarCoord(){
 
     const tds = Object.keys(DISCIPLINAS).map(function(d){
       const pct = Math.round(((est[d] || 0) / DISCIPLINAS[d].length) * 100);
-      return "<td>" + pct + "%</td>";
+      const nota = notasPorObra[o.id] && notasPorObra[o.id][d] !== undefined
+        ? '<br><span class="coord-nota">Nota: ' + notasPorObra[o.id][d] + '/10</span>'
+        : '<br><span style="color:var(--dim)">Nota: —</span>';
+      return "<td>" + pct + "%" + nota + "</td>";
     }).join("");
 
     corpo.innerHTML +=

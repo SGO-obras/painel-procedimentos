@@ -1088,6 +1088,24 @@ async function montarCoord(){
     if(p.concluido) mapa[p.obra_id][p.disciplina]++;
   });
 
+  // Carrega as avaliações registradas para as obras exibidas ao coordenador.
+  const { data: avaliacoes, error: avaliacoesError } = await supabaseClient
+    .from("avaliacoes")
+    .select("obra_id,disciplina,nota")
+    .in("obra_id", obraIds);
+
+  if(avaliacoesError){
+    console.error("Erro ao carregar avaliações:", avaliacoesError);
+    corpo.innerHTML = '<tr><td colspan="' + totalColunasCoord + '" style="color:var(--erro)">Erro ao carregar as avaliações.</td></tr>';
+    return;
+  }
+
+  const notasPorObra = {};
+  (avaliacoes || []).forEach(function(a){
+    if(!notasPorObra[a.obra_id]) notasPorObra[a.obra_id] = {};
+    notasPorObra[a.obra_id][a.disciplina] = Number(a.nota);
+  });
+
   corpo.innerHTML = "";
 
   obras.forEach(function(o){
